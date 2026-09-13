@@ -1,10 +1,10 @@
-# GymBuddy — Gym & Nutrition Tracker WhatsApp Bot
+# GymBuddy   Gym & Nutrition Tracker WhatsApp Bot
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![Tests](https://img.shields.io/badge/tests-13%20passed-brightgreen)](tests/test_core.py)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A personal **gym-progress + food tracker** you talk to over **WhatsApp** (or the terminal). It logs your lifts and meals, then applies **machine learning** to spot the thing every lifter fears: **a plateau** — and it cross-references your nutrition to explain *why*.
+A personal **gym-progress + food tracker** you talk to over **WhatsApp** (or the terminal). It logs your lifts and meals, then applies **machine learning** to spot the thing every lifter fears: **a plateau**   and it cross-references your nutrition to explain *why*.
 
 Built after 4 years of lifting and hitting a plateau myself: the bot tells me when a lift has stalled and whether my eating is the cause.
 
@@ -12,18 +12,18 @@ Built after 4 years of lifting and hitting a plateau myself: the bot tells me wh
 
 ## Ringkasan (Bahasa Indonesia)
 
-Bot pelacak **progres gym + nutrisi** yang bisa kamu ajak ngobrol lewat **WhatsApp** (atau terminal). Catat angkatan & makanan, lalu bot memakai **machine learning** untuk mendeteksi **plateau** — dan mengecek log makananmu untuk menjelaskan *penyebabnya* (mis. lagi defisit kalori).
+Bot pelacak **progres gym + nutrisi** yang bisa kamu ajak ngobrol lewat **WhatsApp** (atau terminal). Catat angkatan & makanan, lalu bot memakai **machine learning** untuk mendeteksi **plateau**   dan mengecek log makananmu untuk menjelaskan *penyebabnya* (mis. lagi defisit kalori).
 
 ---
 
 ## Features
 
-- **Food logging** — `/eat` dengan makro lengkap (kalori, protein, karbohidrat, lemak), target harian yang bisa diatur, ringkasan `/today` dan `/week`.
-- **Training logging** — `/set` untuk mencatat beberapa set sekaligus, perhitungan **1RM estimasi (Epley)**.
-- **Progress visualization** — `/progress` menampilkan *sparkline* kekuatan + tren % per minggu.
-- **Plateau detection (the ML part)** — `/plateau` memfit regresi linier terhadap e1RM per sesi, menghitung tren **recent 3 sesi**, dan menandai stagnasi. Lalu memberi saran (deload / tambah volume / perbaiki asupan) berdasarkan tren **body weight & kalori** kamu.
-- **Double progression** — `/plan` menyarankan beban/reps sesi berikutnya (aturan hypertrophy 8–12 reps).
-- **Body-weight trend** — `/weigh` + `/weight` untuk melihat apakah kamu *cutting / gaining / stable*.
+- **Food logging**   `/eat` dengan makro lengkap (kalori, protein, karbohidrat, lemak), target harian yang bisa diatur, ringkasan `/today` dan `/week`.
+- **Training logging**   `/set` untuk mencatat beberapa set sekaligus, perhitungan **1RM estimasi (Epley)**.
+- **Progress visualization**   `/progress` menampilkan *sparkline* kekuatan + tren % per minggu.
+- **Plateau detection (the ML part)**   `/plateau` memfit regresi linier terhadap e1RM per sesi, menghitung tren **recent 3 sesi**, dan menandai stagnasi. Lalu memberi saran (deload / tambah volume / perbaiki asupan) berdasarkan tren **body weight & kalori** kamu.
+- **Double progression**   `/plan` menyarankan beban/reps sesi berikutnya (aturan hypertrophy 8–12 reps).
+- **Body-weight trend**   `/weigh` + `/weight` untuk melihat apakah kamu *cutting / gaining / stable*.
 
 ## Commands
 
@@ -71,7 +71,7 @@ gym-tracker-whatsapp-bot/
 └── README.md
 ```
 
-## Quick start (terminal — zero installs)
+## Quick start (terminal   zero installs)
 
 ```powershell
 python -m gymbot.cli        # or: python cli.py
@@ -81,7 +81,7 @@ Type `/demo` to seed sample data, then `/plateau bench press`, `/progress squat`
 
 ## Run it on WhatsApp (free)
 
-1. Install **Node.js LTS** — <https://nodejs.org> (WPP_Whatsapp uses WPPConnect under the hood).
+1. Install **Node.js LTS**   <https://nodejs.org> (WPP_Whatsapp uses WPPConnect under the hood).
 2. Install the Python wrapper:
 
 ```powershell
@@ -96,17 +96,17 @@ python bot.py
 
 Message your bot from another chat (send yourself a WhatsApp message) and start with `/help`.
 
-> ⚠️ This uses the **unofficial** WhatsApp Web protocol via WPPConnect. For personal use it's free and fine; don't spam. For a fully official path, the same `gymbot` core can be wired to the **Meta WhatsApp Cloud API** (free service-conversation tier) — the adapter is the only file you'd change.
+> ⚠️ This uses the **unofficial** WhatsApp Web protocol via WPPConnect. For personal use it's free and fine; don't spam. For a fully official path, the same `gymbot` core can be wired to the **Meta WhatsApp Cloud API** (free service-conversation tier)   the adapter is the only file you'd change.
 
 ## Free / low-cost hosting
 
 | Option | Cost | Notes |
 |--------|------|-------|
-| Your own PC (Raspberry Pi) | free | simplest — bot runs while the machine is on |
+| Your own PC (Raspberry Pi) | free | simplest   bot runs while the machine is on |
 | Oracle Cloud *Always Free* VPS | free | a small VM stays online 24/7 |
 | Fly.io / Render free tier | free | small Node+Python app |
 
-The bot only needs a tiny always-on machine and a SQLite file — no paid services required.
+The bot only needs a tiny always-on machine and a SQLite file   no paid services required.
 
 ## Tests
 
