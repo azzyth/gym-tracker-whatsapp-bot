@@ -1,0 +1,3 @@
+# Core has zero dependencies (Python stdlib only).
+# The WhatsApp adapter needs WPP_Whatsapp:
+WPP-Whatsapp>=1.2
