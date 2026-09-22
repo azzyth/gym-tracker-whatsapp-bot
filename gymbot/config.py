@@ -29,6 +29,25 @@ PLATEAU_WINDOW_WEEKS = 6         # how far back to look for stagnation
 PLATEAU_MIN_SESSIONS = 4         # need at least this many sessions to judge
 PLATEAU_SLOPE_PCT_WEEK = 0.25    # e1RM growth below this %/week counts as "stalled"
 
+# --- Nutrition / body-weight cross-reference ------------------------------------
+NUTRITION_LOOKBACK_DAYS = 14     # window for the food + body-weight join
+UNDERFED_KCAL_PCT = 90.0         # averaging below this % of target = under-fuelled
+WEIGHT_TREND_KG_WEEK = 0.15      # ± threshold that separates gaining/cutting/stable
+
+# --- Views ----------------------------------------------------------------------
+SPARKLINE_WIDTH = 20             # longer series get downsampled to this many bars
+PRS_LIMIT = 15                   # most lifts listed by /prs
+
+# --- Input sanity guards --------------------------------------------------------
+MAX_MEAL_KCAL = 10000
+MAX_SET_WEIGHT = 1000
+MAX_SET_REPS = 100
+MAX_BODYWEIGHT_KG = 500
+
+# --- Weekly report --------------------------------------------------------------
+REPORT_WEEKDAY = 6               # datetime.weekday(): Mon=0 ... Sun=6
+REPORT_HOUR = 19                 # sent at the first check at/after this hour
+
 # --- Storage --------------------------------------------------------------------
 DB_PATH = os.environ.get("GYMBOT_DB", "gymbot.db")
 
@@ -57,8 +76,12 @@ TRAINING
 /progress <exercise> [weeks]                 strength trend + sparkline
 /plateau [exercise]                          stagnation check + advice
 /plan <exercise>                             next-session suggestion (double progression)
+/prs                                         all-time best estimated 1RMs
+/rename <old> -> <new>                       rename or merge a lift across your history
 
 OTHER
+/undo [meal|set|weigh] [n]                   delete your most recent entries
+/report                                      weekly summary (also pushed every Sunday)
 /demo                                        seed sample data to try it out
 /help                                        this message
 
