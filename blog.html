@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building GymBuddy: A WhatsApp Bot That Detects Your Plateau Using Pure Python ML</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --primary: #6366f1;
+      --accent: #10b981;
+      --code-bg: #0d1117;
+      --code-border: #30363d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 8px; line-height: 1.2; }
+    h2 { font-size: 1.5rem; font-weight: 700; margin: 40px 0 16px; color: var(--primary); }
+    h3 { font-size: 1.15rem; font-weight: 600; margin: 24px 0 8px; color: var(--accent); }
+    p { margin-bottom: 16px; color: var(--text); }
+    .subtitle { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 32px; }
+    .meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 0.85em;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    pre code { background: none; border: none; padding: 0; }
+    .callout {
+      background: var(--card);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      margin: 24px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .callout strong { color: var(--primary); }
+    ul, ol { margin: 16px 0; padding-left: 24px; }
+    li { margin-bottom: 8px; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--primary);
+      color: white;
+      margin-right: 4px;
+    }
+    .footer {
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <h1>Building GymBuddy: A WhatsApp Bot That Detects Your Plateau Using Pure Python ML</h1>
+  <p class="subtitle">How I built a gym tracker that knows when you're stuck — and tells you why.</p>
+  <div class="meta">
+    By <strong>azzyth</strong> · Data Science student @ Telkom University ·
+    <a href="https://github.com/azzyth/gym-tracker-whatsapp-bot">GitHub Repo</a>
+  </div>
+
+  <h2>The Problem</h2>
+  <p>
+    Every lifter hits a plateau. You walk into the gym, do the same weight for the same reps,
+    and nothing changes for weeks. The frustrating part isn't the stall — it's not knowing
+    <em>why</em>. Are you under-eating? Cutting? Or is your program just done?
+  </p>
+  <p>
+    I built <strong>GymBuddy</strong> to answer that question. It's a WhatsApp bot (or terminal CLI)
+    that logs your lifts and meals, then applies machine learning to detect plateaus and
+    cross-reference your nutrition to explain the cause.
+  </p>
+
+  <h2>The ML: Pure Python, No Dependencies</h2>
+  <p>
+    The core is intentionally <strong>dependency-free</strong>. No numpy, no scikit-learn, no pandas.
+    Just Python's standard library. This was a deliberate choice for three reasons:
+  </p>
+  <ul>
+    <li><strong>Transparency</strong> — I can read every line of the math. No black-box sklearn calls.</li>
+    <li><strong>Testability</strong> — tests run with <code>unittest</code> only. No pip install needed.</li>
+    <li><strong>Portability</strong> — the core works on any Python install, including Raspberry Pi.</li>
+  </ul>
+
+  <h3>Step 1: Estimate 1RM (Epley Formula)</h3>
+  <p>For each set, estimate the one-rep max using the classic Epley formula:</p>
+  <pre><code>def epley_1rm(weight: float, reps: int) -> float:
+    """Epley 1RM estimate."""
+    if reps == 1:
+        return weight
+    return weight * (1 + reps / 30.0)</code></pre>
+
+  <h3>Step 2: Group by Day, Take Best</h3>
+  <p>
+    Raw sets are grouped by day (<code>ts[:10]</code>), and the best e1RM per day becomes
+    a single data point. This prevents a high-volume day from being counted as "progress."
+  </p>
+
+  <h3>Step 3: Linear Regression on e1RM</h3>
+  <p>
+    Fit ordinary least squares on the (day_index, e1RM) points over a 6-week window.
+    The slope tells you the trend in kg/week.
+  </p>
+  <pre><code>def linear_trend(xs, ys):
+    """Ordinary least squares. Returns (slope, intercept)."""
+    n = len(xs)
+    if n < 2:
+        return 0.0, ys[0] if ys else 0.0
+    mean_x = sum(xs) / n
+    mean_y = sum(ys) / n
+    num = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+    den = sum((x - mean_x) ** 2 for x in xs)
+    if den == 0:
+        return 0.0, mean_y
+    slope = num / den
+    intercept = mean_y - slope * mean_x
+    return slope, intercept</code></pre>
+
+  <h3>Step 4: Flag the Plateau</h3>
+  <p>
+    A stall is flagged when <strong>either</strong> condition holds:
+  </p>
+  <ul>
+    <li>Recent 3-session trend ≤ 0%/week (you're going backwards right now)</li>
+    <li>Overall 6-week slope < 0.25%/week (barely moving even over a month)</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Key insight:</strong> The 3-session check catches sudden stalls. The 6-week check
+    catches slow drift. Using both prevents false positives from a single bad session.
+  </div>
+
+  <h2>The Nutrition Cross-Reference</h2>
+  <p>
+    This is where it gets interesting. When a stall is detected, the bot doesn't just say
+    "you're stuck." It <strong>joins your food logs and body weight</strong> to name the cause:
+  </p>
+  <ol>
+    <li><strong>Under-fuelled</strong> — averaging below 90% of calorie target → fix food before program</li>
+    <li><strong>Cutting</strong> — body weight trending down → flatline is expected, hold the deload</li>
+    <li><strong>Programmed-out</strong> — eating at target, stable weight → training is the problem, deload 1 week then add volume</li>
+    <li><strong>No data</strong> — falls back to generic checklist</li>
+  </ol>
+  <p>
+    The priority order matters: if you're under-eating, that's the root cause regardless of
+    what your program looks like. Fix the food first.
+  </p>
+
+  <h2>Architecture: Testable by Design</h2>
+  <p>
+    Every function accepts a <code>now</code> parameter. No <code>datetime.now()</code> calls
+    buried inside business logic. This means:
+  </p>
+  <ul>
+    <li>Time-dependent plateau logic is fully testable without mocking clocks</li>
+    <li>Tests are deterministic — same input, same output, every time</li>
+    <li>The weekly report builder is a single function with two consumers (<code>/report</code> command + Sunday push)</li>
+  </ul>
+  <pre><code># Deterministic now injection
+def plateau_status(rows, exercise, now, context=None):
+    cutoff = now - timedelta(weeks=6)
+    recent_cutoff = now - timedelta(days=21)
+    # ... all time logic uses `now`, never datetime.now()</code></pre>
+
+  <h2>The Right-to-Left Parsing Trick</h2>
+  <p>
+    Exercise names have spaces: "bench press", "squat". Commands look like
+    <code>/set bench press 80 10 9 8</code>. How do you parse the name from the numbers?
+  </p>
+  <p>
+    <strong>Parse right-to-left.</strong> Pop trailing tokens that parse as numbers.
+    Everything remaining is the name. No quotes needed.
+  </p>
+  <pre><code># Right-to-left: pop numeric args from the end
+parts = text.split()
+args = []
+while parts and _is_number(parts[-1]):
+    args.insert(0, float(parts.pop()))
+name = " ".join(parts).lower()  # "bench press"</code></pre>
+
+  <h2>Sparkline Downsampling</h2>
+  <p>
+    The <code>/progress</code> command shows a 20-character sparkline of strength over time.
+    But what if you have 50 sessions? Average buckets, but <strong>keep the last bucket's true value</strong>
+    so the tip always reflects current state.
+  </p>
+  <pre><code>def _downsample(values, width=20):
+    """Average buckets, but keep last bucket's true value."""
+    if len(values) <= width:
+        return values
+    bucket_size = len(values) / width
+    result = []
+    for i in range(width):
+        start = int(i * bucket_size)
+        end = int((i + 1) * bucket_size)
+        chunk = values[start:end]
+        if i == width - 1:
+            result.append(values[-1])  # tip = current
+        else:
+            result.append(sum(chunk) / len(chunk))
+    return result</code></pre>
+
+  <h2>Test Coverage: 62 Tests, Stdlib Only</h2>
+  <p>
+    The entire core is tested with <code>unittest</code> — no pytest, no fixtures, no mocks.
+    Every test uses a temp SQLite file and deterministic <code>now</code> injection.
+  </p>
+  <ul>
+    <li><code>TestMath</code> — epley, linear trend (flat/rising)</li>
+    <li><code>TestPlateau</code> — stalled, progressing, insufficient data, no context</li>
+    <li><code>TestBodyweightTrend</code> — gaining, cutting, stable, single point</li>
+    <li><code>TestSparkline</code> — downsampling, tip = latest, short untouched, flat series</li>
+    <li><code>TestDoubleProgression</code> — all 3 branches (top range, mid range, below range)</li>
+    <li><code>TestPlateauNutritionJoin</code> — 10 tests verifying cause-naming + evidence display</li>
+    <li><code>TestUndo</code> — 8 tests including cross-table newest selection</li>
+    <li><code>TestRename</code>, <code>TestPrs</code>, <code>TestWeeklyReport</code>, <code>TestValidation</code></li>
+  </ul>
+  <p>
+    The nutrition join tests are particularly interesting — they verify that the bot
+    <strong>doesn't lecture you about eating</strong> when you're cutting (weight dropping),
+    and <strong>does</strong> flag under-eating when calories are low but weight is stable.
+  </p>
+
+  <h2>Double Progression: The <code>/plan</code> Command</h2>
+  <p>
+    Beyond detection, GymBuddy suggests your next session using double progression rules:
+  </p>
+  <ul>
+    <li><strong>Hit top of range (12 reps)</strong> → add 2.5 kg, drop to 8 reps</li>
+    <li><strong>In range (8-11 reps)</strong> → same weight, +1 rep</li>
+    <li><strong>Below range (<8 reps)</strong> → back off 10%, rebuild</li>
+  </ul>
+  <p>
+    This is the hypertrophy standard (8-12 reps) applied algorithmically. No AI, no
+    black box — just rules you could verify with a calculator.
+  </p>
+
+  <h2>Architecture: Clean Separation</h2>
+  <pre><code>gym-tracker-whatsapp-bot/
+├── gymbot/                 # pure-Python core (zero third-party deps)
+│   ├── db.py               # SQLite storage
+│   ├── plateau.py          # 1RM, regression, plateau detector + nutrition join
+│   ├── workout.py          # training views
+│   ├── food.py             # nutrition summaries + plateau context
+│   ├── report.py           # weekly report (shared by CLI & WhatsApp)
+│   ├── commands.py         # parse + dispatch
+│   └── cli.py              # terminal REPL
+├── bot.py                  # WhatsApp adapter + weekly report scheduler
+├── cli.py                  # python cli.py shortcut
+└── tests/test_core.py      # 62 unittest tests (no deps)</code></pre>
+  <p>
+    The "brain" is pure Python with zero third-party dependencies. The WhatsApp adapter
+    is the only file that changes if you switch to the Meta Cloud API. This separation
+    is what makes the core testable without a WhatsApp session.
+  </p>
+
+  <h2>Lessons Learned</h2>
+  <ol>
+    <li><strong>Pure Python ML is underrated.</strong> For simple regression on small datasets,
+    you don't need scikit-learn. You need transparency and testability.</li>
+    <li><strong>Dependency injection for time.</strong> Passing <code>now</code> as a parameter
+    instead of calling <code>datetime.now()</code> internally made every time-dependent
+    test trivial.</li>
+    <li><strong>Right-to-left parsing.</strong> Parsing exercise names with spaces is annoying.
+    Pop numbers from the right, everything else is the name.</li>
+    <li><strong>Single report builder, two consumers.</strong> Building the weekly report as
+    a pure function (no WhatsApp session needed) made it testable in isolation.</li>
+    <li><strong>Evidence/auditability.</strong> Every plateau verdict shows the numbers it
+    was drawn from. Users trust the bot more when they can see the math.</li>
+    <li><strong>Config-driven thresholds.</strong> All magic numbers live in <code>config.py</code>
+    with env overrides. No hardcoded constants in business logic.</li>
+  </ol>
+
+  <h2>Try It Yourself</h2>
+  <pre><code>git clone https://github.com/azzyth/gym-tracker-whatsapp-bot
+cd gym-tracker-whatsapp-bot
+python -m gymbot.cli       # or: python cli.py
+# Type /demo to seed 8 weeks of sample data
+# Then: /plateau bench press, /progress squat, /week, /weight
